@@ -116,6 +116,10 @@ if TYPE_CHECKING:
     from pandas.core.series import Series
     from pandas.core.window.indexers import BaseIndexer
 
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import webbrowser
+
 # goal is to be able to define the docs close to function, while still being
 # able to share
 _shared_docs = {**_shared_docs}
@@ -161,6 +165,111 @@ def _single_replace(self, to_replace, method, inplace, limit):
 
 
 bool_t = bool  # Need alias because NDFrame has def bool:
+
+
+class ToCSVGUI(tk.Frame):
+    def __init__(self, master, *args, **kwargs):
+        self.master = master
+        self.frame = tk.Frame(master)
+        self.frame.pack()
+        self.bottom_frame = tk.Frame(master)
+
+        master.resizable(0, 0)
+        master.attributes('-topmost', 1)
+        master.title("pandas - Python Data Analysis Library")
+        master.protocol("WM_DELETE_WINDOW", self.closeWindow)
+        master.geometry("+{}+{}".format(int(master.winfo_screenwidth()/2.15 - master.winfo_reqwidth()/2), int(master.winfo_screenheight()/2.15 - master.winfo_reqheight()/2)))
+
+        self.window_status = 0
+        self.filename=""
+
+    def openBrowser(self, url):
+        webbrowser.open_new(url)
+
+    def browseFile(self):
+        self.filename = filedialog.asksaveasfilename(title="Save as CSV file", filetypes=(("Comma-separated values file", "*.csv"),), defaultextension=".csv")
+        if self.filename:
+            self.var_filepath.set("Filepath: " + self.filename)
+
+    def closeWindow(self):
+        if messagebox.askokcancel("Close GUI?", "Do you want to close this window?", default="cancel"):
+            self.master.destroy()
+        if not self.filename:
+            self.window_status=1
+        else:
+            self.window_status=2
+
+    def saveFile(self):
+        if self.filename:
+            print("Filepath:", self.filename)
+            self.master.destroy()
+        else:
+            messagebox.showinfo("Invalid file or directory", "Please save as a valid CSV file.")
+
+    def toggleSettings(self):
+        if self.btn_settings.config("relief")[-1] == tk.SUNKEN:
+            self.btn_settings.config(relief=tk.RAISED)
+            self.bottom_frame.pack_forget()
+        else:
+            self.btn_settings.config(relief=tk.SUNKEN)
+            self.bottom_frame.pack(side=tk.BOTTOM)
+
+    def makeGUI(self, master):
+        self.lbl_title = tk.Label(self.frame, text="to_csv()\nWrite object to a comma-separated values (csv) file.")
+        self.lbl_title.grid(row=0, padx=10)
+
+        self.lbl_link = tk.Label(self.frame, text="View Documentation", fg="blue", cursor="hand2")
+        self.lbl_link.grid(row=1)
+        self.lbl_link.bind("<Button-1>", lambda web : self.openBrowser("https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html"))
+
+        self.lbl_select = tk.Label(self.frame, text="Generate .csv file")
+        self.lbl_select.grid(row=2, padx=5, pady=(15, 5), sticky=tk.W)
+
+        self.btn_select = tk.Button(self.frame, text="Browse", command=self.browseFile)
+        self.btn_select.grid(row=2, padx=5, pady=(15, 5), sticky=tk.E)
+
+        master.update_idletasks()
+
+        self.var_filepath = tk.StringVar()
+        self.var_filepath.set("Filepath: NONE (click 'Browse')")
+        self.lbl_filepath = tk.Label(self.frame, textvariable=self.var_filepath, wraplength=master.winfo_width())
+        self.lbl_filepath.grid(row=3, pady=(0, 10))
+
+        self.btn_to_csv = tk.Button(self.frame, text="Save File", command=self.saveFile)
+        self.btn_to_csv.grid(row=4, pady=5)
+
+        self.btn_settings = tk.Button(self.frame, text="Advanced Settings", relief=tk.RAISED, command=self.toggleSettings)
+        self.btn_settings.grid(row=5, pady=(5, 10))
+
+        self.lf_general = tk.LabelFrame(self.bottom_frame, text=" General ")
+        self.lf_general.grid(ipadx=2, ipady=2)
+
+        self.param_sep = tk.StringVar()
+        self.lbl_param_sep = tk.Label(self.lf_general, text="sep", width=8)
+        self.lbl_param_sep.grid(row=0, column=0)
+        self.ent_param_sep = tk.Entry(self.lf_general, width=12, textvariable=self.param_sep)
+        self.ent_param_sep.grid(row=0, column=1, padx=(0, 2))
+
+        self.param_header = tk.StringVar()
+        self.lbl_param_header = tk.Label(self.lf_general, text="header", width=8)
+        self.lbl_param_header.grid(row=0, column=2, padx=(2, 0))
+        self.ent_param_header = tk.Entry(self.lf_general, width=12, textvariable=self.param_header)
+        self.ent_param_header.grid(row=0, column=3)
+
+        self.param_index = tk.StringVar()
+        self.lbl_param_index = tk.Label(self.lf_general, text="index", width=8)
+        self.lbl_param_index.grid(row=1, column=0)
+        self.ent_param_index = tk.Entry(self.lf_general, width=12, textvariable=self.param_index)
+        self.ent_param_index.grid(row=1, column=1, padx=(0, 2))
+
+        self.param_encoding = tk.StringVar()
+        self.lbl_param_encoding = tk.Label(self.lf_general, text="encoding", width=8)
+        self.lbl_param_encoding.grid(row=1, column=2, padx=(2, 0))
+        self.ent_param_encoding = tk.Entry(self.lf_general, width=12, textvariable=self.param_encoding)
+        self.ent_param_encoding.grid(row=1, column=3)
+
+        self.lbl_moreinfo = tk.Label(self.bottom_frame, text="Common parameters are shown and configurable above. For additional parameters, please visit the documentation site to learn more.", wraplength=master.winfo_width())
+        self.lbl_moreinfo.grid(pady=5)
 
 
 class NDFrame(PandasObject, SelectionMixin, indexing.IndexingMixin):
@@ -2253,7 +2362,7 @@ class NDFrame(PandasObject, SelectionMixin, indexing.IndexingMixin):
             be parsed by ``fsspec``, e.g., starting "s3://", "gcs://". An error
             will be raised if providing this argument with a local path or
             a file-like buffer. See the fsspec and backend storage implementation
-            docs for the set of allowed keys and values.
+            docs for the set of allowed keys and values
 
             .. versionadded:: 1.2.0
 
@@ -2777,7 +2886,7 @@ class NDFrame(PandasObject, SelectionMixin, indexing.IndexingMixin):
             be parsed by ``fsspec``, e.g., starting "s3://", "gcs://". An error
             will be raised if providing this argument with a local path or
             a file-like buffer. See the fsspec and backend storage implementation
-            docs for the set of allowed keys and values.
+            docs for the set of allowed keys and values
 
             .. versionadded:: 1.2.0
 
@@ -3163,6 +3272,7 @@ class NDFrame(PandasObject, SelectionMixin, indexing.IndexingMixin):
         decimal: Optional[str] = ".",
         errors: str = "strict",
         storage_options: StorageOptions = None,
+        gui = False,
     ) -> Optional[str]:
         r"""
         Write object to a comma-separated values (csv) file.
@@ -3286,7 +3396,7 @@ class NDFrame(PandasObject, SelectionMixin, indexing.IndexingMixin):
             be parsed by ``fsspec``, e.g., starting "s3://", "gcs://". An error
             will be raised if providing this argument with a local path or
             a file-like buffer. See the fsspec and backend storage implementation
-            docs for the set of allowed keys and values.
+            docs for the set of allowed keys and values
 
             .. versionadded:: 1.2.0
 
@@ -3318,6 +3428,52 @@ class NDFrame(PandasObject, SelectionMixin, indexing.IndexingMixin):
         """
         df = self if isinstance(self, ABCDataFrame) else self.to_frame()
 
+        if gui:
+            gui = tk.Tk()
+            display = ToCSVGUI(gui)
+            display.makeGUI(gui)
+
+            display.param_sep.set(sep)
+            display.param_header.set("True")
+            display.param_index.set("True")
+            display.param_encoding.set("utf-8")
+
+            gui.mainloop()
+
+            syntax = []
+
+            if display.filename:
+                path_or_buf = display.filename
+
+            if display.param_sep.get() != ",":
+                sep = display.param_sep.get()
+                syntax.append("sep='" + sep + "'")
+
+            if display.param_header.get() in ['False', '0']:
+                header = False
+                syntax.append("header=False")
+            elif display.param_header.get() in ['True', '1']:
+                header = True
+            else:
+                try:
+                    header = display.param_header.get().split(',')
+                except:
+                    raise ValueError("header must be bool or list of str (default True). Check documentation for more details.")
+                finally:
+                    syntax.append("header=" + str(header))
+
+            if display.param_index.get() in ['False', '0']:
+                index = False
+                syntax.append("index=False")
+            elif display.param_index.get() in ['True', '1']:
+                index = True
+            else:
+                raise ValueError("index must be bool (default True). Check documentation for more details.")
+
+            if display.param_encoding.get() != "utf-8":
+                encoding = display.param_encoding.get()
+                syntax.append("encoding='" + encoding + "'")
+
         from pandas.io.formats.csvs import CSVFormatter
 
         formatter = CSVFormatter(
@@ -3344,11 +3500,22 @@ class NDFrame(PandasObject, SelectionMixin, indexing.IndexingMixin):
             decimal=decimal,
             storage_options=storage_options,
         )
-        formatter.save()
 
-        if path_or_buf is None:
-            assert isinstance(formatter.path_or_buf, StringIO)
-            return formatter.path_or_buf.getvalue()
+        if gui:
+            if display.window_status == 1:
+                raise Exception("[1] Unexpected exit by user.")
+            if display.window_status == 2:
+                raise Exception("[2] Unexpected exit by user. Click the 'Save File' button to save as file!")
+            if display.filename:
+                syntax.insert(0, "\"" + display.filename + "\"")
+                print("Syntax: " +"DataFrame.to_csv(" + ", ".join(syntax) + ")")
+                formatter.save()
+        else:
+            if path_or_buf is None:
+                assert isinstance(formatter.path_or_buf, StringIO)
+                return formatter.path_or_buf.getvalue()
+            else:
+                formatter.save()
 
         return None
 
@@ -3970,7 +4137,7 @@ class NDFrame(PandasObject, SelectionMixin, indexing.IndexingMixin):
             Maximum number of consecutive labels to fill for inexact matches.
         tolerance : optional
             Maximum distance between original and new labels for inexact
-            matches. The values of the index at the matching locations must
+            matches. The values of the index at the matching locations most
             satisfy the equation ``abs(index[indexer] - target) <= tolerance``.
 
             Tolerance may be a scalar value, which applies the same tolerance
@@ -9195,7 +9362,7 @@ class NDFrame(PandasObject, SelectionMixin, indexing.IndexingMixin):
             extend the index when shifting and preserve the original data.
             If `freq` is specified as "infer" then it will be inferred from
             the freq or inferred_freq attributes of the index. If neither of
-            those attributes exist, a ValueError is thrown.
+            those attributes exist, a ValueError is thrown
         axis : {{0 or 'index', 1 or 'columns', None}}, default None
             Shift direction.
         fill_value : object, optional
@@ -9528,13 +9695,7 @@ class NDFrame(PandasObject, SelectionMixin, indexing.IndexingMixin):
 
         # if we have a date index, convert to dates, otherwise
         # treat like a slice
-        if ax._is_all_dates:
-            if is_object_dtype(ax.dtype):
-                warnings.warn(
-                    "Treating object-dtype Index of date objects as DatetimeIndex "
-                    "is deprecated, will be removed in a future version.",
-                    FutureWarning,
-                )
+        if ax.is_all_dates:
             from pandas.core.tools.datetimes import to_datetime
 
             before = to_datetime(before)
