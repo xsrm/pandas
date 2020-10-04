@@ -66,6 +66,10 @@ from pandas.core.tools import datetimes as tools
 from pandas.io.common import get_filepath_or_buffer, get_handle, validate_header_arg
 from pandas.io.date_converters import generic_parser
 
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import webbrowser
+
 # BOM character (byte order mark)
 # This exists at the beginning of a file to indicate endianness
 # of a file (stream). Unfortunately, this marker screws up parsing,
@@ -533,6 +537,117 @@ _deprecated_defaults: Dict[str, Any] = {}
 _deprecated_args: Set[str] = set()
 
 
+class ReadCSVGUI(tk.Frame):
+    def __init__(self, master, *args, **kwargs):
+        self.master = master
+        self.frame = tk.Frame(master)
+        self.frame.pack()
+        self.bottom_frame = tk.Frame(master)
+
+        master.resizable(0, 0)
+        master.attributes('-topmost', 1)
+        master.title("pandas - Python Data Analysis Library")
+        master.protocol("WM_DELETE_WINDOW", self.closeWindow)
+        master.geometry("+{}+{}".format(int(master.winfo_screenwidth()/2.15 - master.winfo_reqwidth()/2), int(master.winfo_screenheight()/2.15 - master.winfo_reqheight()/2)))
+
+        self.window_status = 0
+        self.filename=""
+
+    def openBrowser(self, url):
+        webbrowser.open_new(url)
+
+    def browseFile(self):
+        self.filename = filedialog.askopenfilename(title="Select CSV file", filetypes=(("Comma-separated values file", "*.csv"),))
+        if self.filename:
+            self.var_filepath.set("Filepath: " + self.filename)
+
+    def closeWindow(self):
+        if messagebox.askokcancel("Close GUI?", "Do you want to close this window?", default="cancel"):
+            self.master.destroy()
+        if not self.filename:
+            self.window_status=1
+        else:
+            self.window_status=2
+
+    def readFile(self):
+        if self.filename:
+            print("Filepath:", self.filename)
+            self.master.destroy()
+        else:
+            messagebox.showinfo("Invalid file or directory", "Please browse and select a valid CSV file.")
+
+    def toggleSettings(self):
+        if self.btn_settings.config("relief")[-1] == tk.SUNKEN:
+            self.btn_settings.config(relief=tk.RAISED)
+            self.bottom_frame.pack_forget()
+        else:
+            self.btn_settings.config(relief=tk.SUNKEN)
+            self.bottom_frame.pack(side=tk.BOTTOM)
+
+    def makeGUI(self, master):
+        self.lbl_title = tk.Label(self.frame, text="read_csv()\nRead a comma-separated values (csv) file into DataFrame.")
+        self.lbl_title.grid(row=0, padx=10)
+
+        self.lbl_link = tk.Label(self.frame, text="View Documentation", fg="blue", cursor="hand2")
+        self.lbl_link.grid(row=1)
+        self.lbl_link.bind("<Button-1>", lambda web : self.openBrowser("https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html"))
+
+        self.lbl_select = tk.Label(self.frame, text="Select .csv file")
+        self.lbl_select.grid(row=2, padx=5, pady=(15, 5), sticky=tk.W)
+
+        self.btn_select = tk.Button(self.frame, text="Browse", command=self.browseFile)
+        self.btn_select.grid(row=2, padx=5, pady=(15, 5), sticky=tk.E)
+
+        master.update_idletasks()
+
+        self.var_filepath = tk.StringVar()
+        self.var_filepath.set("Filepath: NONE (click 'Browse')")
+        self.lbl_filepath = tk.Label(self.frame, textvariable=self.var_filepath, wraplength=master.winfo_width())
+        self.lbl_filepath.grid(row=3, pady=(0, 10))
+
+        self.btn_read_csv = tk.Button(self.frame, text="Read File", command=self.readFile)
+        self.btn_read_csv.grid(row=4, pady=5)
+
+        self.btn_settings = tk.Button(self.frame, text="Advanced Settings", relief=tk.RAISED, command=self.toggleSettings)
+        self.btn_settings.grid(row=5, pady=(5, 10))
+
+        self.lf_general = tk.LabelFrame(self.bottom_frame, text=" General ")
+        self.lf_general.grid(ipadx=2, ipady=2)
+
+        self.param_sep = tk.StringVar()
+        self.lbl_param_sep = tk.Label(self.lf_general, text="sep", width=8)
+        self.lbl_param_sep.grid(row=0, column=0)
+        self.ent_param_sep = tk.Entry(self.lf_general, width=15, textvariable=self.param_sep)
+        self.ent_param_sep.grid(row=0, column=1, padx=(0, 2))
+
+        self.param_delimiter = tk.StringVar()
+        self.lbl_param_delimiter = tk.Label(self.lf_general, text="delimiter", width=8)
+        self.lbl_param_delimiter.grid(row=0, column=2, padx=(2, 0))
+        self.ent_param_delimiter = tk.Entry(self.lf_general, width=15, textvariable=self.param_delimiter)
+        self.ent_param_delimiter.grid(row=0, column=3)
+
+        self.lf_colind = tk.LabelFrame(self.bottom_frame, text=" Column and Index Locations and Names ")
+        self.lf_colind.grid(ipadx=2, ipady=2)
+
+        self.param_header = tk.StringVar()
+        self.lbl_param_header = tk.Label(self.lf_colind, text="header", width=15)
+        self.lbl_param_header.grid(row=0, column=0, padx=1)
+        self.ent_param_header = tk.Entry(self.lf_colind, width=33, textvariable=self.param_header)
+        self.ent_param_header.grid(row=0, column=1, padx=1)
+
+        self.lf_internal = tk.LabelFrame(self.bottom_frame, text=" Internal ")
+        self.lf_internal.grid(ipadx=2, ipady=2)
+
+        self.param_delim_whitespace = tk.StringVar()
+        self.lbl_param_delim_whitespace = tk.Label(self.lf_internal, text="delim_whitespace", width=15)
+        self.lbl_param_delim_whitespace.grid(row=0, column=0, padx=1)
+        self.ent_param_delim_whitespace = tk.Entry(self.lf_internal, width=33, textvariable=self.param_delim_whitespace)
+        self.ent_param_delim_whitespace.grid(row=0, column=1, padx=1)
+
+        self.lbl_moreinfo = tk.Label(self.bottom_frame, text="Common parameters are shown and configurable above. For additional parameters, please visit the documentation site to learn more.", wraplength=master.winfo_width())
+        self.lbl_moreinfo.grid(pady=5)
+
+
 @Appender(
     _doc_read_csv_and_table.format(
         func_name="read_csv",
@@ -541,7 +656,7 @@ _deprecated_args: Set[str] = set()
     )
 )
 def read_csv(
-    filepath_or_buffer: FilePathOrBuffer,
+    filepath_or_buffer=None,
     sep=",",
     delimiter=None,
     # Column and Index Locations and Names
@@ -599,6 +714,8 @@ def read_csv(
     memory_map=False,
     float_precision=None,
     storage_options: StorageOptions = None,
+    # GUI
+    gui=False,
 ):
     # gh-23761
     #
@@ -613,6 +730,51 @@ def read_csv(
     # the comparison to dialect values by checking if default values
     # for BOTH "delimiter" and "sep" were provided.
     default_sep = ","
+
+    if gui:
+        gui = tk.Tk()
+        display = ReadCSVGUI(gui)
+        display.makeGUI(gui)
+
+        display.param_sep.set(sep)
+        display.param_delimiter.set(delimiter)
+        display.param_header.set(header)
+        display.param_delim_whitespace.set('False')
+
+        gui.mainloop()
+
+        syntax = []
+
+        if display.param_sep.get() == ",":
+            pass
+        elif display.param_sep.get() != "None":
+            sep = display.param_sep.get()
+            syntax.append("sep='" + sep + "'")
+        else:
+            syntax.append("sep=None")
+
+        if display.param_delimiter.get() != "None":
+            delimiter = display.param_delimiter.get()
+            syntax.append("delimiter='" + delimiter + "'")
+
+        if display.param_header.get() != "infer":
+            try:
+                header = int(display.param_header.get())
+            except ValueError:
+                try:
+                    header = [int(num) for num in display.param_header.get().split(',')]
+                except:
+                    raise ValueError("header must be int or list of int (default ‘infer’). Check documentation for more details.")
+            finally:
+                syntax.append("header=" + str(header))
+
+        if display.param_delim_whitespace.get() in ['False', '0']:
+            delim_whitespace = False
+        elif display.param_delim_whitespace.get() in ['True', '1']:
+            delim_whitespace = True
+            syntax.append("delim_whitespace=True")
+        else:
+            raise ValueError("delim_whitespace must be bool (default False). Check documentation for more details.")
 
     if dialect is not None:
         sep_override = delimiter is None and sep == default_sep
@@ -688,7 +850,20 @@ def read_csv(
         storage_options=storage_options,
     )
 
-    return _read(filepath_or_buffer, kwds)
+    if gui:
+        if display.window_status == 1:
+            raise Exception("[1] Unexpected exit by user.")
+        if display.window_status == 2:
+            raise Exception("[2] Unexpected exit by user. Click the 'Read File' button to read the file!")
+        if display.filename:
+            syntax.insert(0, "\"" + display.filename + "\"")
+            print("Syntax: " + "pandas.read_csv(" + ", ".join(syntax) + ")")
+            return _read(display.filename, kwds)
+    else:
+        if filepath_or_buffer is None:
+            raise ValueError("Please enter a valid file or directory. Otherwise, set 'gui=True' to use GUI.")
+        else:
+            return _read(filepath_or_buffer, kwds)
 
 
 @Appender(
