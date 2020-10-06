@@ -4926,7 +4926,7 @@ class DataFrame(NDFrame):
     def notnull(self) -> DataFrame:
         return ~self.isna()
 
-    def dropna(self, axis=0, how="any", thresh=None, subset=None, inplace=False):
+    def dropna(self, axis=0, how="any", thresh=None, subset=None, inplace=False, dropinf=False):
         """
         Remove missing values.
 
@@ -5048,6 +5048,14 @@ class DataFrame(NDFrame):
             agg_obj = self.take(indices, axis=agg_axis)
 
         count = agg_obj.count(axis=agg_axis)
+
+        if dropinf:
+            withinf = []
+            for num in range(len(agg_obj)):
+                if any(value in [float('inf'), -float('inf')] for value in agg_obj.values[num]):
+                    withinf.append(num)
+            for num in withinf:
+                count[num] -= 1
 
         if thresh is not None:
             mask = count >= thresh
