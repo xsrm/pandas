@@ -564,10 +564,10 @@ class ReadCSVGUI(tk.Frame):
     def closeWindow(self):
         if messagebox.askokcancel("Close GUI?", "Do you want to close this window?", default="cancel"):
             self.master.destroy()
-        if not self.filename:
-            self.window_status=1
-        else:
-            self.window_status=2
+            if not self.filename:
+                self.window_status=1
+            else:
+                self.window_status=2
 
     def readFile(self):
         if self.filename:
